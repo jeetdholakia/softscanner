@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.Point;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -24,7 +23,9 @@ import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
 import org.opencv.core.RotatedRect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
@@ -35,6 +36,10 @@ import org.opencv.utils.Converters;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class SoftScannerActivity extends Activity {
 
@@ -88,7 +93,7 @@ public class SoftScannerActivity extends Activity {
                 Log.i(TAG, "event.getX(), event.getY(): " + event.getX() + " " + event.getY());
                 int projectedX = (int) ((double) event.getX() * ((double) sampledImage.width() / (double) view.getWidth()));
                 int projectedY = (int) ((double) event.getY() * ((double) sampledImage.height() / (double) view.getHeight()));
-                org.opencv.core.Point corner = new org.opencv.core.Point(projectedX, projectedY);
+                Point corner = new Point(projectedX, projectedY);
                 corners.add(corner);
                 Imgproc.circle(sampledImage, corner, 5, new Scalar(0, 0, 255), 2);
                 displayImage(sampledImage);
@@ -109,7 +114,7 @@ public class SoftScannerActivity extends Activity {
             if (requestCode == SELECT_PICTURE) {
                 Uri selectedImageUri = data.getData();
                 selectedImagePath = getPath(selectedImageUri);
-                Log.i(TAG, "selectedImagePath: " + selectedImagePath);
+                Log.d(TAG, "selectedImagePath: " + selectedImagePath);
                 loadImage(selectedImagePath);
                 displayImage(sampledImage);
             }
@@ -155,7 +160,7 @@ public class SoftScannerActivity extends Activity {
         Imgproc.cvtColor(originalImage, rgbImage, Imgproc.COLOR_BGR2RGB);
 
         Display display = getWindowManager().getDefaultDisplay();
-        Point size = new Point();
+        android.graphics.Point size = new android.graphics.Point();
         display.getSize(size);
 
         int width = size.x;
@@ -169,7 +174,7 @@ public class SoftScannerActivity extends Activity {
             ExifInterface exif = new ExifInterface(selectedImagePath);
             int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, 1);
 
-            switch (orientation) {
+            /*switch (orientation) {
                 case ExifInterface.ORIENTATION_ROTATE_90:
                     //get the mirrored image
                     sampledImage = sampledImage.t();
@@ -182,7 +187,7 @@ public class SoftScannerActivity extends Activity {
                     //Flip on the x-axis
                     Core.flip(sampledImage, sampledImage, 0);
                     break;
-            }
+            }*/
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -391,6 +396,7 @@ public class SoftScannerActivity extends Activity {
             displayImage(sampledImage);
             return true;
         } else if (id == R.id.action_rigidscan) {
+            Log.d(TAG, "Implementing rigid scan");
             if (sampledImage == null) {
                 Context context = getApplicationContext();
                 CharSequence text = "You need to load an image first!";
@@ -419,7 +425,7 @@ public class SoftScannerActivity extends Activity {
             int rightLine = 0;
             int topLine = 0;
             int bottomLine = 0;
-            ArrayList<org.opencv.core.Point> points = new ArrayList<org.opencv.core.Point>();
+            ArrayList<Point> points = new ArrayList<Point>();
 
             for (int i = 0; i < lines.cols(); i++) {
                 double[] line = lines.get(0, i);
@@ -552,6 +558,9 @@ public class SoftScannerActivity extends Activity {
             Imgproc.warpPerspective(sampledImage, correctedImage, transformation, correctedImage.size());
             displayImage(correctedImage);
         } else if (id == R.id.action_flexscan) {
+
+
+            Log.d(TAG, "Implementing flex scan");
             if (sampledImage == null) {
                 Context context = getApplicationContext();
                 CharSequence text = "You need to load an image first!";
@@ -562,33 +571,97 @@ public class SoftScannerActivity extends Activity {
                 return true;
             }
             Mat gray = new Mat();
-            Imgproc.cvtColor(sampledImage, gray, Imgproc.COLOR_RGB2GRAY);
-            Imgproc.GaussianBlur(gray, gray, new Size(15, 15), 0);
+
+            // Imgproc.cvtColor(sampledImage, gray, Imgproc.COLOR_RGBA2GRAY);
+
+            // Imgproc.GaussianBlur(gray, gray, new Size(15, 15), 0);
 
             Mat edgeImage = new Mat();
-            Imgproc.Canny(gray, edgeImage, 150, 300);
+            Imgproc.Canny(sampledImage, edgeImage, 150, 300);
 
             Mat lines = new Mat();
             int threshold = 200;
-            Imgproc.HoughLinesP(edgeImage, lines, 1, Math.PI / 180, threshold, 100, 60);
-            ArrayList<org.opencv.core.Point> flexCorners = new ArrayList<org.opencv.core.Point>();
+            Mat hierarchy = new Mat();
+            List<MatOfPoint> contours = new ArrayList<>();
+
+            Imgproc.findContours(edgeImage, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+
+            //Log.d(TAG,"Number of Contours are: " + contours.size());
+
+            Map<Double, Integer> unsortedContours = new TreeMap<>();
+
+            for (int i = 0; i < contours.size(); i++) {
+                double contourArea = Imgproc.contourArea(contours.get(i));
+                unsortedContours.put(contourArea, i);
+                //Log.d(TAG,"Unsorted Contours are: " + unsortedContours.toString());
+            }
+
+
+            TreeMap<Double, Integer> sortedContours = new TreeMap<>(unsortedContours);
+            /*for(int i = 0 ; i < sortedContours.size(); i++){
+                Log.d(TAG,"Sorted contours are: " + sortedContours.toString());
+            }*/
+
+            Iterator iterator = sortedContours.descendingKeySet().iterator();
+            ArrayList<Integer> sortedKeys = new ArrayList<>();
+            for (int i = 0; i < 5; i++) {
+                sortedKeys.add(sortedContours.get(iterator.next()));
+            }
+
+            //Log.d(TAG,"Sorted Keys are:" + sortedKeys.toString());
+
+            List<MatOfPoint> sortedCroppedContours = new ArrayList<>();
+            for (int j = 0; j < sortedKeys.size(); j++) {
+                sortedCroppedContours.add(contours.get(sortedKeys.get(j)));
+            }
+
+            //Log.d(TAG,"Final sorted contour is: " + sortedCroppedContours.toString());
+
+            Imgproc.HoughLinesP(edgeImage, lines, 1, Math.PI / 180, threshold, 20, 10);
+
+            ArrayList<Point> flexCorners = new ArrayList<>();
 
             //Find the intersection of the four lines to get the four corners
-            for (int i = 0; i < lines.cols(); i++) {
-                for (int j = i + 1; j < lines.cols(); j++) {
-                    org.opencv.core.Point intersectionPoint = getLinesIntersection(lines.get(0, i), lines.get(0, j));
+            /*Log.d(TAG,"Lines matrix is : " + Arrays.toString(lines.get(0, 0)));
+            Log.d(TAG,"Lines matrix is : " + Arrays.toString(lines.get(1, 0)));
+            Log.d(TAG,"Lines matrix is : " + Arrays.toString(lines.get(2, 0)));
+            Log.d(TAG,"Lines matrix is : " + Arrays.toString(lines.get(3, 0)));
+            Log.d(TAG,"Lines matrix is : " + Arrays.toString(lines.get(4, 0)));
+            Log.d(TAG,"Lines matrix is : " + Arrays.toString(lines.get(5, 0)));
+            Log.d(TAG,"Lines matrix is : " + Arrays.toString(lines.get(6, 0)));*/
+
+
+
+
+
+            /* Implementing path2 as mentioned in http://www.pyimagesearch.com/2014/09/01/build-kick-ass-mobile-document-scanner-just-5-minutes/
+
+             */
+
+
+            Log.d(TAG, "Hough Lines rows: " + lines.rows() + " and columns: " + lines.cols());
+            for (int i = 0; i < lines.rows(); i++) {
+                //Log.d(TAG,"Lines are: " + Arrays.toString(lines.get(i, 0)));
+                for (int j = i + 1; j < lines.rows(); j++) {
+                    Point intersectionPoint = getLinesIntersection(lines.get(i, 0), lines.get(j, 0));
                     if (intersectionPoint != null) {
-                        Log.i(TAG, "intersectionPoint: " + intersectionPoint.x + " " + intersectionPoint.y);
+                        Log.d(TAG, "intersectionPoint: " + intersectionPoint.x + " " + intersectionPoint.y);
                         flexCorners.add(intersectionPoint);
+                    } else {
+                        Log.d(TAG, "Intersection points are null");
                     }
                 }
+
             }
+
+            Log.d(TAG, "Flex Corners are: " + flexCorners.size());
 
             MatOfPoint2f cornersMat = new MatOfPoint2f();
             cornersMat.fromList(flexCorners);
-            Log.i(TAG, "cornersMat: " + cornersMat);
+            Log.d(TAG, "cornersMat: " + cornersMat);
             MatOfPoint2f approxConrers = new MatOfPoint2f();
             Imgproc.approxPolyDP(cornersMat, approxConrers, Imgproc.arcLength(cornersMat, true) * 0.02, true);
+
             Log.i(TAG, "approxConrers: " + approxConrers);
             if (approxConrers.rows() < 4) {
                 Context context = getApplicationContext();
@@ -603,7 +676,7 @@ public class SoftScannerActivity extends Activity {
             //find the centroid of the polygon to order the found corners
             flexCorners.clear();
             Converters.Mat_to_vector_Point2f(approxConrers, flexCorners);
-            org.opencv.core.Point centroid = new org.opencv.core.Point(0, 0);
+            Point centroid = new Point(0, 0);
 
             for (org.opencv.core.Point point : flexCorners) {
                 Log.i(TAG, "Point x: " + point.x + " Point y: " + point.y);
@@ -631,6 +704,8 @@ public class SoftScannerActivity extends Activity {
             Mat transformation = Imgproc.getPerspectiveTransform(srcPoints, destPoints);
             Imgproc.warpPerspective(sampledImage, correctedImage, transformation, correctedImage.size());
             displayImage(correctedImage);
+
+
         } else if (id == R.id.action_manScan) {
             if (sampledImage == null) {
                 Context context = getApplicationContext();
@@ -678,10 +753,11 @@ public class SoftScannerActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    private org.opencv.core.Point getLinesIntersection(double[] firstLine, double[] secondLine) {
+    private Point getLinesIntersection(double[] firstLine, double[] secondLine) {
+        Log.d(TAG, "getLinesIntersection called");
         double FX1 = firstLine[0], FY1 = firstLine[1], FX2 = firstLine[2], FY2 = firstLine[3];
         double SX1 = secondLine[0], SY1 = secondLine[1], SX2 = secondLine[2], SY2 = secondLine[3];
-        org.opencv.core.Point intersectionPoint = null;
+        Point intersectionPoint = null;
         //Make sure the we will not divide by zero
         double denominator = (FX1 - FX2) * (SY1 - SY2) - (FY1 - FY2) * (SX1 - SX2);
         if (denominator != 0) {
