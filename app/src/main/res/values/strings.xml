@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">SoftScanner</string>
+    <string name="action_OpenGallary">Open Gallary</string>
+    <string name="action_HL">HTL</string>
+    <string name="action_CHT">CHT</string>
+    <string name="list_blurr">Smooth Image</string>
+    <string name="list_blurr_small">SI</string>
+    <string name="action_average">Average</string>
+    <string name="action_gaussian">Gaussian</string>
+    <string name="action_median">Median</string>
+    <string name="action_bilateral">Bilateral</string>
+    <string name="action_revert">revert</string>
+    <string name="list_ed">Edge Detection</string>
+    <string name="list_ed_small">ED</string>
+    <string name="action_canny">Canny</string>
+    <string name="action_sobel">Sobel</string>
+    <string name="action_rigidscan">Rigid Scan</string>
+    <string name="action_flexscan">Flex Scan</string>
+    <string name="action_manscan">Manual Scan</string>
+</resources>

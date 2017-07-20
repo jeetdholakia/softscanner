@@ -1,0 +1,86 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.app2.softscanner.SoftScanner">
+
+    <item
+        android:id="@+id/action_openGallary"
+        android:orderInCategory="1"
+        android:showAsAction="never"
+        android:title="@string/action_OpenGallary" />
+    <item
+        android:id="@+id/action_HTL"
+        android:enabled="true"
+        android:orderInCategory="2"
+        android:title="@string/action_HL"
+        android:visible="true"></item>
+    <item
+        android:id="@+id/action_CHT"
+        android:enabled="true"
+        android:orderInCategory="3"
+        android:title="@string/action_CHT"
+        android:visible="true"></item>
+    <item
+        android:id="@+id/img_blurr"
+        android:enabled="true"
+        android:orderInCategory="4"
+        android:showAsAction="ifRoom"
+        android:title="@string/list_blurr"
+        android:titleCondensed="@string/list_blurr_small"
+        android:visible="true">
+        <menu>
+            <item
+                android:id="@+id/action_average"
+                android:title="@string/action_average" />
+            <item
+                android:id="@+id/action_gaussian"
+                android:title="@string/action_gaussian" />
+            <item
+                android:id="@+id/action_median"
+                android:title="@string/action_median" />
+            <item
+                android:id="@+id/action_bilateral"
+                android:title="@string/action_bilateral" />
+        </menu>
+    </item>
+    <item
+        android:id="@+id/action_revert"
+        android:enabled="true"
+        android:orderInCategory="5"
+        android:title="@string/action_revert"
+        android:visible="true"></item>
+    <item
+        android:id="@+id/img_edge_detection"
+        android:enabled="true"
+        android:orderInCategory="5"
+        android:showAsAction="ifRoom"
+        android:title="@string/list_ed"
+        android:titleCondensed="@string/list_ed_small"
+        android:visible="true">
+        <menu>
+            <item
+                android:id="@+id/action_sobel"
+                android:title="@string/action_sobel" />
+            <item
+                android:id="@+id/action_canny"
+                android:title="@string/action_canny" />
+        </menu>
+    </item>
+    <item
+        android:id="@+id/action_rigidscan"
+        android:enabled="true"
+        android:orderInCategory="6"
+        android:title="@string/action_rigidscan"
+        android:visible="true"></item>
+    <item
+        android:id="@+id/action_flexscan"
+        android:enabled="true"
+        android:orderInCategory="7"
+        android:title="@string/action_flexscan"
+        android:visible="true"></item>
+    <item
+        android:id="@+id/action_manScan"
+        android:enabled="true"
+        android:orderInCategory="8"
+        android:title="@string/action_manscan"
+        android:visible="true"></item>
+</menu>
