@@ -571,13 +571,12 @@ public class SoftScannerActivity extends Activity {
                 return true;
             }
             Mat gray = new Mat();
+            Imgproc.cvtColor(sampledImage, gray, Imgproc.COLOR_RGBA2GRAY);
 
-            // Imgproc.cvtColor(sampledImage, gray, Imgproc.COLOR_RGBA2GRAY);
-
-            // Imgproc.GaussianBlur(gray, gray, new Size(15, 15), 0);
+            //Imgproc.GaussianBlur(sampledImage, gray, new Size(15, 15), 0);
 
             Mat edgeImage = new Mat();
-            Imgproc.Canny(sampledImage, edgeImage, 150, 300);
+            Imgproc.Canny(gray, edgeImage, 150, 300);
 
             Mat lines = new Mat();
             int threshold = 200;
@@ -770,9 +769,9 @@ public class SoftScannerActivity extends Activity {
         return intersectionPoint;
     }
 
-    void sortCorners(ArrayList<org.opencv.core.Point> corners, org.opencv.core.Point center) {
-        ArrayList<org.opencv.core.Point> top = new ArrayList<org.opencv.core.Point>();
-        ArrayList<org.opencv.core.Point> bottom = new ArrayList<org.opencv.core.Point>();
+    void sortCorners(ArrayList<Point> corners, Point center) {
+        ArrayList<Point> top = new ArrayList<>();
+        ArrayList<Point> bottom = new ArrayList<>();
 
         for (int i = 0; i < corners.size(); i++) {
             if (corners.get(i).y < center.y)
